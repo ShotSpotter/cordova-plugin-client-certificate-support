@@ -35,9 +35,10 @@
 
     <!-- ios -->
     <platform name="ios">
-        <js-module src="www/clientCertificate.js" name="clientCertificate">
+        <js-module src="src/ios/www/clientCertificate.js" name="clientCertificate">
             <clobbers target="clientCertificate" />
         </js-module>
+
 
         <config-file target="config.xml" parent="/*">
             <feature name="ClientCertificate">
@@ -102,6 +103,9 @@
     </platform>
 
   <platform name="android">
+    <js-module src="src/android/www/clientCertificate.js" name="clientCertificate">
+        <clobbers target="clientCertificate" />
+    </js-module>
     <config-file target="res/xml/config.xml" parent="/*">
       <feature name="ClientCertificateAuthentication">
         <param name="android-package" value="de.jstd.cordova.plugin.ClientCertificateAuthentication"/>

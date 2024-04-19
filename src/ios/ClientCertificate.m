@@ -132,49 +132,63 @@ static ClientCertificate * mydelegate = NULL;
 
 + (void) didReceiveAuthenticationChallenge:(NSURLAuthenticationChallenge *)challenge completionHandler:(void (^)(NSURLSessionAuthChallengeDisposition, NSURLCredential * _Nullable))completionHandler withOptionsNullable:(NSObject *) _optionsIgnored
 {
-    // now exposed as a static method usable by @brodybits/cordova-plugin-ios-xhr
+    static NSURLCredential *serverCredential = nil;
+    NSURLCredential *credential = nil;
+
     if([challenge previousFailureCount] == 0) {
-
-        NSURLCredential *credential = nil;
-
         NSURLProtectionSpace *protectionSpace = [challenge protectionSpace];
         NSString *authMethod = [protectionSpace authenticationMethod];
+
         if(authMethod == NSURLAuthenticationMethodServerTrust ) {
-            credential = [NSURLCredential credentialForTrust:[protectionSpace serverTrust]];
-        }
+            if (serverCredential != nil) {
+                credential = serverCredential;
+            } else {
+                credential = [NSURLCredential credentialForTrust:[protectionSpace serverTrust]];
+            }
+        } else if(authMethod == NSURLAuthenticationMethodClientCertificate ) {
+            NSURLCredential *clientCredential = [[NSURLCredentialStorage sharedCredentialStorage] defaultCredentialForProtectionSpace:protectionSpace];
+            if (clientCredential) {
+                credential = clientCredential;
+            } else {
+                // no credential stored, go get one.
 
-        else if(authMethod == NSURLAuthenticationMethodClientCertificate ) {
-            SecIdentityRef myIdentity = NULL;
+                SecIdentityRef myIdentity = NULL;
 
-            NSMutableDictionary *query = [NSMutableDictionary dictionaryWithObjectsAndKeys:
-                                          (__bridge id)kSecClass, (__bridge id)kSecClass,
-                                          (__bridge id)kCFBooleanTrue, (__bridge id)kSecReturnRef,
-                                          (__bridge id)kSecMatchLimitOne, (__bridge id)kSecMatchLimit,
-                                          nil];
+                NSMutableDictionary *query = [NSMutableDictionary dictionaryWithObjectsAndKeys:
+                                              (__bridge id)kSecClass, (__bridge id)kSecClass,
+                                              (__bridge id)kCFBooleanTrue, (__bridge id)kSecReturnRef,
+                                              (__bridge id)kSecMatchLimitOne, (__bridge id)kSecMatchLimit,
+                                              nil];
 
-            NSArray *secItemClasses = [NSArray arrayWithObjects:
-                                       (__bridge id)kSecClassIdentity,
-                                       nil];
+                NSArray *secItemClasses = [NSArray arrayWithObjects:
+                                           (__bridge id)kSecClassIdentity,
+                                           nil];
 
-            for (id secItemClass in secItemClasses) {
-                [query setObject:secItemClass forKey:(__bridge id)kSecClass];
+                for (id secItemClass in secItemClasses) {
+                    [query setObject:secItemClass forKey:(__bridge id)kSecClass];
 
-                CFTypeRef result = NULL;
-                SecItemCopyMatching((__bridge CFDictionaryRef)query, &result);
-                if(result != NULL) {
-                    myIdentity = (SecIdentityRef)result;
+                    CFTypeRef result = NULL;
+                    SecItemCopyMatching((__bridge CFDictionaryRef)query, &result);
+                    if(result != NULL) {
+                        myIdentity = (SecIdentityRef)result;
+
+                    }
                 }
+
+                SecCertificateRef myCertificate;
+                if(myIdentity != NULL) {
+                    SecIdentityCopyCertificate(myIdentity, &myCertificate);
+                    const void *certs[] = { myCertificate };
+                    CFArrayRef certsArray = CFArrayCreate(NULL, certs, 1, NULL);
+                    credential = [NSURLCredential credentialWithIdentity:myIdentity certificates:(__bridge NSArray*)certsArray persistence:NSURLCredentialPersistencePermanent];
+                    CFRelease(certsArray);
+
+                    // Persist the credential
+                    [[NSURLCredentialStorage sharedCredentialStorage] setDefaultCredential:credential forProtectionSpace:protectionSpace];
+
+                }
+                CFRelease(myIdentity);
             }
-
-
-            SecCertificateRef myCertificate;
-            if(myIdentity != NULL) {
-                SecIdentityCopyCertificate(myIdentity, &myCertificate);
-                const void *certs[] = { myCertificate };
-                CFArrayRef certsArray = CFArrayCreate(NULL, certs, 1, NULL);
-                credential = [NSURLCredential credentialWithIdentity:myIdentity certificates:(__bridge NSArray*)certsArray persistence:NSURLCredentialPersistencePermanent];
-            }
-
         }
 
         completionHandler(NSURLSessionAuthChallengeUseCredential, credential);
