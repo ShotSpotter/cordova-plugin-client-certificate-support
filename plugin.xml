@@ -106,13 +106,22 @@
     <js-module src="src/android/www/clientCertificate.js" name="clientCertificate">
         <clobbers target="clientCertificate" />
     </js-module>
+
+    <!-- add required dependencies -->
+    <framework src="src/android/build-extras.gradle" custom="true" type="gradleReference"/>
+    
+    <!-- plugin source code -->
+    <source-file src="src/android/ClientCertificateAuthentication.java" target-dir="src/de/jstd/cordova/plugin"/>
+    <source-file src="src/android/customSSLSocketFactory.java" target-dir="src/de/jstd/cordova/plugin"/>
+
+    <!-- trigger the plugin -->
     <config-file target="res/xml/config.xml" parent="/*">
       <feature name="ClientCertificateAuthentication">
         <param name="android-package" value="de.jstd.cordova.plugin.ClientCertificateAuthentication"/>
         <param name="onload" value="true" />
       </feature>
     </config-file>
-    <source-file src="src/android/ClientCertificateAuthentication.java" target-dir="src/de/jstd/cordova/plugin"/>
+
   </platform>
 
 </plugin>

@@ -1,45 +1,35 @@
 package de.jstd.cordova.plugin;
 
 import static java.nio.file.Files.*;
+import static de.jstd.cordova.plugin.customSSLSocketFactory.*;
 
+import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
-import android.content.Context;
-import android.content.SharedPreferences;
-import android.net.http.SslError;
+import javax.net.ssl.SSLSocketFactory;
+
 import android.os.Build;
-import android.preference.PreferenceManager;
-import android.security.KeyChain;
-import android.security.KeyChainAliasCallback;
-import android.security.KeyChainException;
-import android.security.keystore.KeyProperties;
 
 import android.util.Log;
-import android.webkit.SslErrorHandler;
 import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
 import android.webkit.WebView;
-import android.widget.Toast;
 
 import org.apache.cordova.CordovaInterface;
 import org.apache.cordova.CordovaPlugin;
 import org.apache.cordova.CordovaWebView;
 
-import org.apache.cordova.CordovaWebViewEngine;
 import org.apache.cordova.ICordovaClientCertRequest;
 import org.apache.cordova.CallbackContext;
 
-import java.nio.file.Files;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.security.KeyStore;
 
 import java.io.File;
 import java.io.InputStream;
-import java.io.FileInputStream;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.concurrent.ExecutorService;
 import java.util.Enumeration;
 import java.util.Arrays;
 
@@ -48,17 +38,23 @@ import org.apache.cordova.engine.SystemWebViewClient;
 import org.apache.cordova.engine.SystemWebViewEngine;
 import org.json.JSONArray;
 import org.json.JSONException;
-import org.json.JSONObject;
+
+import javax.net.ssl.HttpsURLConnection;
+
 @TargetApi(Build.VERSION_CODES.LOLLIPOP)
 public class ClientCertificateAuthentication extends CordovaPlugin {
+
+    public static final String SP_KEY_ALIAS = "SP_KEY_ALIAS";
+    public static final String TAG = "soundthinking customSSL";
+
+
+    private CordovaInterface cordova;
+    private CordovaWebView webView;
 
     public class Cert {
         public X509Certificate[] mCertificates;
         public PrivateKey mPrivateKey;
     }
-
-    public static final String SP_KEY_ALIAS = "SP_KEY_ALIAS";
-    public static final String TAG = "client-cert-auth";
 
     public HashMap<String, Cert> certs = new HashMap<String, Cert>();
     
@@ -66,9 +62,30 @@ public class ClientCertificateAuthentication extends CordovaPlugin {
     PrivateKey mPrivateKey;
     String mAlias;
 
+    @SuppressLint("SetJavaScriptEnabled")
+    @Override
+    public void pluginInitialize() {
+        super.pluginInitialize();
+        SSLSocketFactory sslSocketFactory = createCustomSSLSocketFactory(cordova, webView);
+        if (sslSocketFactory != null) {
+            try {
+                HttpsURLConnection.setDefaultSSLSocketFactory(sslSocketFactory);
+                Log.d(TAG, "Custom SSLSocketFactory is set in the WebView");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
     @Override
     public void initialize(CordovaInterface cordova, CordovaWebView webView) {
         super.initialize(cordova, webView);
+
+
+        // not sure why this wasn't there, or how it worked before...
+        this.cordova = cordova;
+
+
         // Get the underlying Android WebView
         SystemWebView systemWebView = (SystemWebView) webView.getView();
         SystemWebViewEngine systemWebViewEngine = (SystemWebViewEngine) webView.getEngine();
@@ -99,6 +116,12 @@ public class ClientCertificateAuthentication extends CordovaPlugin {
                 Log.e(TAG, "errorCode: " + error.getErrorCode());
                 Log.e(TAG, "description: " + error.getDescription());
                 Log.e(TAG, "failingUrl: " + request.getUrl());
+            }
+
+            @Override
+            public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+                Log.d("WebView", "Request: " + request.getUrl());
+                return super.shouldInterceptRequest(view, request);
             }
         });
 
