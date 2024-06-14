@@ -34,7 +34,7 @@ public class customSSLSocketFactory {
             String sslAlgo = "TLSv1.1";  // tested other std algo names
             SSLContext sslContext;
             if (provider != null) {
-                sslContext = SSLContext.getInstance(sslAlgo, provider);  // < error thrown here.
+                sslContext = SSLContext.getInstance(sslAlgo, provider);
             } else {
                 sslContext = SSLContext.getInstance(sslAlgo);
             }
