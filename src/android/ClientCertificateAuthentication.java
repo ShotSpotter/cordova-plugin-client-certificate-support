@@ -42,10 +42,8 @@ import org.apache.cordova.engine.SystemWebViewClient;
 import org.apache.cordova.engine.SystemWebViewEngine;
 
 import org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider;
-//import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
-
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
-import org.conscrypt.Conscrypt;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import android.app.admin.SecurityLog;

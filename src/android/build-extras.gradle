@@ -1,10 +1,4 @@
 
 dependencies {
 
-    implementation "org.conscrypt:conscrypt-android:2.5.2"
-
-    implementation group: 'com.madgag.spongycastle', name: 'bctls-jdk15on', version: '1.58.0.0'
-
-    // https://mvnrepository.com/artifact/org.bouncycastle/bctls-jdk15on
-    implementation group: 'org.bouncycastle', name: 'bctls-jdk15on', version: '1.70'
 }
