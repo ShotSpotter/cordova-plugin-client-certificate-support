@@ -17,6 +17,14 @@
   specific language governing permissions and limitations
   under the License.
 -->
+<!--
+
+Note this plugin has been heavily modified from the source project, in order to provide Fips 140-2 compliant SSL support.  
+We've implemented a customized version of the BouncyCastle Fips java library, in consultation with the BouncyCastle maintainers.
+
+The customizations to the BouncyCastle library are to accomodate an android implementation.
+
+-->
 
 <plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
     xmlns:rim="http://www.blackberry.com/ns/widgets"
@@ -26,7 +34,8 @@
 
     <name>Client certificate authentication support</name>
 
-    <description>Client certificate authentication support plugin</description>
+    <description>Client certificate authentication and Fips 140-2 compliance (not certification)</description>
+
 
     <license>Apache 2.0</license>
     <keywords>client, certificate, authentication, client certificate</keywords>
@@ -113,6 +122,9 @@
     <!-- plugin source code -->
     <source-file src="src/android/ClientCertificateAuthentication.java" target-dir="src/de/jstd/cordova/plugin"/>
     <source-file src="src/android/customSSLSocketFactory.java" target-dir="src/de/jstd/cordova/plugin"/>
+
+    <source-file src="src/android/bouncycastle" target-dir="src/org"/>
+    <lib-file src="bctls-fips-1.0.18.jar" />
 
     <!-- trigger the plugin -->
     <config-file target="res/xml/config.xml" parent="/*">
