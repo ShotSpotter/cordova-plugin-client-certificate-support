@@ -1,15 +1,17 @@
 package de.jstd.cordova.plugin;
 
 import static java.nio.file.Files.*;
-import static de.jstd.cordova.plugin.customSSLSocketFactory.*;
+
+import static de.jstd.cordova.plugin.customSSLSocketFactory.createCustomSSLSocketFactory;
 
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
-import javax.net.ssl.SSLSocketFactory;
 
+import android.net.http.SslError;
 import android.os.Build;
 
 import android.util.Log;
+import android.webkit.SslErrorHandler;
 import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
@@ -23,6 +25,8 @@ import org.apache.cordova.ICordovaClientCertRequest;
 import org.apache.cordova.CallbackContext;
 
 import java.security.PrivateKey;
+import java.security.Provider;
+import java.security.Security;
 import java.security.cert.X509Certificate;
 import java.security.KeyStore;
 
@@ -36,10 +40,18 @@ import java.util.Arrays;
 import org.apache.cordova.engine.SystemWebView;
 import org.apache.cordova.engine.SystemWebViewClient;
 import org.apache.cordova.engine.SystemWebViewEngine;
+
+import org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider;
+//import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
+
+import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
+import org.conscrypt.Conscrypt;
 import org.json.JSONArray;
 import org.json.JSONException;
+import android.app.admin.SecurityLog;
 
 import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLSocketFactory;
 
 @TargetApi(Build.VERSION_CODES.LOLLIPOP)
 public class ClientCertificateAuthentication extends CordovaPlugin {
@@ -65,12 +77,32 @@ public class ClientCertificateAuthentication extends CordovaPlugin {
     @SuppressLint("SetJavaScriptEnabled")
     @Override
     public void pluginInitialize() {
+
         super.pluginInitialize();
-        SSLSocketFactory sslSocketFactory = createCustomSSLSocketFactory(cordova, webView);
+//        String manufacturer = Build.MANUFACTURER;
+//        String model = Build.MODEL;
+//        int version = Build.VERSION.SDK_INT;
+//        String versionRelease = Build.VERSION.RELEASE;
+//
+//        Log.e(TAG, "manufacturer " + manufacturer
+//                + " \n model " + model
+//                + " \n sdk version " + version
+//                + " \n versionRelease " + versionRelease
+//        );
+
+        Provider provider = new BouncyCastleFipsProvider();
+        Log.d(TAG, "creating new BouncyCastle fips provider: " + provider.getName());
+        Security.insertProviderAt(provider, 1);
+
+        Provider tlsProvider = new BouncyCastleJsseProvider(true, provider);
+        Log.d(TAG, "creating new BouncyCastle tls provider: " + provider.getName());
+        Security.insertProviderAt(tlsProvider, 1);
+
+        SSLSocketFactory sslSocketFactory = createCustomSSLSocketFactory(tlsProvider);
         if (sslSocketFactory != null) {
             try {
                 HttpsURLConnection.setDefaultSSLSocketFactory(sslSocketFactory);
-                Log.d(TAG, "Custom SSLSocketFactory is set in the WebView");
+                Log.d(TAG, "BouncyCastle Fips SSLSocketFactory is set in the WebView");
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -92,14 +124,15 @@ public class ClientCertificateAuthentication extends CordovaPlugin {
 
         // Set custom WebViewClient
         systemWebView.setWebViewClient(new SystemWebViewClient(systemWebViewEngine) {
-//            @Override
-//            public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
-//                // Handle SSL errors here
-//                // For example, you can show an alert dialog to the user and decide whether to proceed or cancel the request
-//                handler.proceed(); // Proceed with the request (Not recommended for production, handle errors appropriately)
-//                // Or you can handle the error by canceling the request
-//                // handler.cancel();
-//            }
+
+            @Override
+            public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
+                // Handle SSL errors here
+                // For example, you can show an alert dialog to the user and decide whether to proceed or cancel the request
+                handler.proceed(); // Proceed with the request (Not recommended for production, handle errors appropriately)
+                // Or you can handle the error by canceling the request
+                // handler.cancel();
+            }
 
             @Override
             public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
@@ -118,6 +151,16 @@ public class ClientCertificateAuthentication extends CordovaPlugin {
                 Log.e(TAG, "failingUrl: " + request.getUrl());
             }
 
+            @Override
+            public void onReceivedHttpError(WebView view,
+                                            WebResourceRequest request, WebResourceResponse errorResponse) {
+                Log.e(TAG, "error: " +  errorResponse.toString());
+                Log.e(TAG, "reasonPhrase: " + errorResponse.getReasonPhrase());
+                Log.e(TAG, "responseHeaders: " + errorResponse.getResponseHeaders());
+                Log.e(TAG, "failingUrl: " + request.getUrl());
+                super.onReceivedHttpError(view, request, errorResponse);
+
+            }
             @Override
             public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
                 Log.d("WebView", "Request: " + request.getUrl());
@@ -148,7 +191,7 @@ public class ClientCertificateAuthentication extends CordovaPlugin {
 
     private Cert loadKeysFromKeyStore(String p12path, String p12password) {
         try {
-            KeyStore keystore = KeyStore.getInstance("PKCS12");
+            KeyStore keystore = KeyStore.getInstance("PKCS12", "BCFIPS");
             InputStream astream;
             if (p12path.startsWith("file:")) {
                 File certFile = new File(p12path.substring(7));
