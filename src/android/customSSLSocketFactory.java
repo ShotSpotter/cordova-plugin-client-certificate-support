@@ -11,6 +11,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509ExtendedTrustManager;
 import javax.net.ssl.X509TrustManager;
 
 public class customSSLSocketFactory {
@@ -20,16 +21,22 @@ public class customSSLSocketFactory {
 
         Log.d(TAG, "createCustomSSLSocketFactory");
         try {
+
             String algorithm = TrustManagerFactory.getDefaultAlgorithm();
             Log.d(TAG, "trustManagerFactory default algorithm: " + algorithm);
 
             TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(algorithm, provider);
             trustManagerFactory.init((KeyStore) null);
+
             TrustManager[] trustManagers = trustManagerFactory.getTrustManagers();
             if (trustManagers.length != 1 || !(trustManagers[0] instanceof X509TrustManager)) {
                 throw new NoSuchAlgorithmException("Unexpected default trust managers: " + java.util.Arrays.toString(trustManagers));
             }
-            X509TrustManager trustManager = (X509TrustManager) trustManagers[0];
+            X509TrustManager trustManager =  (X509ExtendedTrustManager) trustManagers[0];
+
+            // Wrap the TrustManager with CustomTrustManagerWrapper
+            CustomTrustManagerWrapper customWrapper = new CustomTrustManagerWrapper(trustManager);
+
 
             String sslAlgo = "TLSv1.1";  // tested other std algo names
             SSLContext sslContext;
@@ -39,7 +46,7 @@ public class customSSLSocketFactory {
                 sslContext = SSLContext.getInstance(sslAlgo);
             }
 
-            sslContext.init(null, new TrustManager[]{trustManager}, new SecureRandom());
+            sslContext.init(null, new TrustManager[]{customWrapper}, new SecureRandom());
 
             // debug information only
             SSLContext inUseContext = SSLContext.getInstance(sslAlgo);

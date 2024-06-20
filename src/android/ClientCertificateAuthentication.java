@@ -4,6 +4,7 @@ import static java.nio.file.Files.*;
 
 import static de.jstd.cordova.plugin.customSSLSocketFactory.createCustomSSLSocketFactory;
 
+import android.CustomTrustManagerWrapper;
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 
@@ -50,6 +51,9 @@ import android.app.admin.SecurityLog;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509ExtendedTrustManager;
 
 @TargetApi(Build.VERSION_CODES.LOLLIPOP)
 public class ClientCertificateAuthentication extends CordovaPlugin {
@@ -98,6 +102,9 @@ public class ClientCertificateAuthentication extends CordovaPlugin {
                 providerName = provider.getName();
                 Log.d(TAG, "creating new BouncyCastle fips provider: " + providerName);
                 Security.insertProviderAt(provider, 1);
+
+
+
 
                 Provider tlsProvider = new BouncyCastleJsseProvider(true, provider);
                 Log.d(TAG, "creating new BouncyCastle tls provider: " + provider.getName());
