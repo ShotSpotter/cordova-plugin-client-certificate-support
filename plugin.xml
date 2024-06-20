@@ -122,6 +122,7 @@ The customizations to the BouncyCastle library are to accomodate an android impl
     <!-- plugin source code -->
     <source-file src="src/android/ClientCertificateAuthentication.java" target-dir="src/de/jstd/cordova/plugin"/>
     <source-file src="src/android/customSSLSocketFactory.java" target-dir="src/de/jstd/cordova/plugin"/>
+    <source-file src="src/android/CustomTrustManagerWrapper.java" target-dir="src/de/jstd/cordova/plugin"/>
 
     <source-file src="src/android/bouncycastle" target-dir="java/org"/>
     <lib-file src="src/android/bctls-fips-1.0.19.jar" />
