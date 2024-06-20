@@ -66,6 +66,8 @@ public class ClientCertificateAuthentication extends CordovaPlugin {
         public PrivateKey mPrivateKey;
     }
 
+    private static String providerName = null;
+
     public HashMap<String, Cert> certs = new HashMap<String, Cert>();
     
     X509Certificate[] mCertificates;
@@ -88,19 +90,26 @@ public class ClientCertificateAuthentication extends CordovaPlugin {
 //                + " \n versionRelease " + versionRelease
 //        );
 
-        Provider provider = new BouncyCastleFipsProvider();
-        Log.d(TAG, "creating new BouncyCastle fips provider: " + provider.getName());
-        Security.insertProviderAt(provider, 1);
-
-        Provider tlsProvider = new BouncyCastleJsseProvider(true, provider);
-        Log.d(TAG, "creating new BouncyCastle tls provider: " + provider.getName());
-        Security.insertProviderAt(tlsProvider, 1);
-
-        SSLSocketFactory sslSocketFactory = createCustomSSLSocketFactory(tlsProvider);
-        if (sslSocketFactory != null) {
+        boolean useBouncyCastleFipsProvider = this.preferences.getBoolean("useBouncyCastleFipsProvider", false);
+        if (useBouncyCastleFipsProvider) {
+            Log.d(TAG, "Configured to use BouncyCastle Fips Provider");
             try {
-                HttpsURLConnection.setDefaultSSLSocketFactory(sslSocketFactory);
-                Log.d(TAG, "BouncyCastle Fips SSLSocketFactory is set in the WebView");
+                Provider provider = new BouncyCastleFipsProvider();
+                providerName = provider.getName();
+                Log.d(TAG, "creating new BouncyCastle fips provider: " + providerName);
+                Security.insertProviderAt(provider, 1);
+
+                Provider tlsProvider = new BouncyCastleJsseProvider(true, provider);
+                Log.d(TAG, "creating new BouncyCastle tls provider: " + provider.getName());
+                Security.insertProviderAt(tlsProvider, 1);
+
+                SSLSocketFactory sslSocketFactory = createCustomSSLSocketFactory(tlsProvider);
+                if (sslSocketFactory != null) {
+
+                    HttpsURLConnection.setDefaultSSLSocketFactory(sslSocketFactory);
+                    Log.d(TAG, "BouncyCastle Fips SSLSocketFactory is set in the WebView");
+
+                }
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -189,7 +198,13 @@ public class ClientCertificateAuthentication extends CordovaPlugin {
 
     private Cert loadKeysFromKeyStore(String p12path, String p12password) {
         try {
-            KeyStore keystore = KeyStore.getInstance("PKCS12", "BCFIPS");
+
+            KeyStore keystore;
+            if (providerName != null) {
+                keystore = KeyStore.getInstance("PKCS12", providerName);
+            } else {
+                keystore = KeyStore.getInstance("PkCS12");
+            }
             InputStream astream;
             if (p12path.startsWith("file:")) {
                 File certFile = new File(p12path.substring(7));
@@ -198,10 +213,7 @@ public class ClientCertificateAuthentication extends CordovaPlugin {
             } else {
                 astream = cordova.getActivity().getApplicationContext().getAssets().open(p12path);
             }
-
-//            File initialFile = new File(p12path);
-//            InputStream astream = new FileInputStream(initialFile);
-//
+            
             keystore.load(astream, p12password.toCharArray());
             astream.close();
             Enumeration e = keystore.aliases();
@@ -238,8 +250,11 @@ public class ClientCertificateAuthentication extends CordovaPlugin {
 
 
                 Cert cert = loadKeysFromKeyStore(p12path, p12password);
+                if (cert == null) {
+                    c.error("unable to retrieve custom client certificate");
+                    return false;
+                }
                 certs.put(host, cert);
-
 
                 c.success("Path of the certificate and password are registered for use");
                 return true;
