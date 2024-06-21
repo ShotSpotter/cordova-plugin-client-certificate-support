@@ -4,7 +4,6 @@ import static java.nio.file.Files.*;
 
 import static de.jstd.cordova.plugin.customSSLSocketFactory.createCustomSSLSocketFactory;
 
-
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 
@@ -48,11 +47,8 @@ import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 import org.json.JSONArray;
 import org.json.JSONException;
 
-
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLSocketFactory;
-
-
 @TargetApi(Build.VERSION_CODES.LOLLIPOP)
 public class ClientCertificateAuthentication extends CordovaPlugin {
 
@@ -112,7 +108,7 @@ public class ClientCertificateAuthentication extends CordovaPlugin {
                 if (sslSocketFactory != null) {
 
                     HttpsURLConnection.setDefaultSSLSocketFactory(sslSocketFactory);
-                    Log.d(TAG, "BouncyCastle Fips SSLSocketFactory is set in the WebView");
+                    Log.d(TAG, "BouncyCastle Fips SSLSocketFactory is set for the WebView");
 
                 }
             } catch (Exception e) {
