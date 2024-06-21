@@ -32,7 +32,7 @@ public class customSSLSocketFactory {
             if (trustManagers.length != 1 || !(trustManagers[0] instanceof X509TrustManager)) {
                 throw new NoSuchAlgorithmException("Unexpected default trust managers: " + java.util.Arrays.toString(trustManagers));
             }
-            X509TrustManager trustManager =  trustManagers[0];
+            X509TrustManager trustManager = (X509TrustManager) trustManagers[0];
 
             String sslAlgo = "TLSv1.1";  // tested other std algo names
             SSLContext sslContext;
