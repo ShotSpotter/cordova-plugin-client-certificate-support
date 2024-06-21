@@ -3,6 +3,8 @@ package de.jstd.cordova.plugin;
 import java.net.Socket;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.List;
+
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.X509ExtendedTrustManager;
 
@@ -47,6 +49,11 @@ public class CustomTrustManagerWrapper extends X509ExtendedTrustManager {
     @Override
     public void checkServerTrusted(X509Certificate[] chain, String authType, SSLEngine engine) throws CertificateException {
         wrappedTrustManager.checkServerTrusted(chain, authType, engine);
+    }
+    
+    public List<X509Certificate> checkServerTrusted(X509Certificate[] chain, String authType, String hostname) throws CertificateException
+    {
+        return java.util.Arrays.asList(chain);
     }
 }
 

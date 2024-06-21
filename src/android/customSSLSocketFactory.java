@@ -32,7 +32,7 @@ public class customSSLSocketFactory {
             if (trustManagers.length != 1 || !(trustManagers[0] instanceof X509TrustManager)) {
                 throw new NoSuchAlgorithmException("Unexpected default trust managers: " + java.util.Arrays.toString(trustManagers));
             }
-            X509TrustManager trustManager =  (X509ExtendedTrustManager) trustManagers[0];
+            X509ExtendedTrustManager trustManager =  (X509ExtendedTrustManager) trustManagers[0];
 
             // Wrap the TrustManager with CustomTrustManagerWrapper
             CustomTrustManagerWrapper customWrapper = new CustomTrustManagerWrapper(trustManager);

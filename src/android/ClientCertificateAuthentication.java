@@ -4,7 +4,7 @@ import static java.nio.file.Files.*;
 
 import static de.jstd.cordova.plugin.customSSLSocketFactory.createCustomSSLSocketFactory;
 
-import android.CustomTrustManagerWrapper;
+
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 
@@ -47,13 +47,11 @@ import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 
 import org.json.JSONArray;
 import org.json.JSONException;
-import android.app.admin.SecurityLog;
+
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLSocketFactory;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
-import javax.net.ssl.X509ExtendedTrustManager;
+
 
 @TargetApi(Build.VERSION_CODES.LOLLIPOP)
 public class ClientCertificateAuthentication extends CordovaPlugin {
