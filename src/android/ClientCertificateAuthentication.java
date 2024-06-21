@@ -4,7 +4,6 @@ import static java.nio.file.Files.*;
 
 import static de.jstd.cordova.plugin.customSSLSocketFactory.createCustomSSLSocketFactory;
 
-import android.CustomTrustManagerWrapper;
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 
